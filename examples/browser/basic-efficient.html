@@ -1,27 +1,273 @@
 <!DOCTYPE HTML>
 <html>
   <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR System - Text Recognition</title>
     <script src="/dist/tesseract.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+      
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      
+      .header {
+        text-align: center;
+        color: white;
+        margin-bottom: 30px;
+      }
+      
+      .header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+      }
+      
+      .header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+      }
+      
+      .upload-section {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        margin-bottom: 20px;
+      }
+      
+      .upload-area {
+        border: 2px dashed #667eea;
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      
+      .upload-area:hover {
+        border-color: #764ba2;
+        background: #f8f9ff;
+      }
+      
+      .upload-area i {
+        font-size: 3rem;
+        color: #667eea;
+        margin-bottom: 10px;
+      }
+      
+      .upload-btn {
+        display: inline-block;
+        padding: 12px 30px;
+        background: #667eea;
+        color: white;
+        border-radius: 25px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+      
+      .upload-btn:hover {
+        background: #764ba2;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+      }
+      
+      #uploader {
+        display: none;
+      }
+      
+      .preview-section {
+        display: none;
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        margin-bottom: 20px;
+      }
+      
+      .preview-section.show {
+        display: block;
+      }
+      
+      .preview-section h2 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.5rem;
+      }
+      
+      .image-preview {
+        max-width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+      }
+      
+      .result-section {
+        display: none;
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      }
+      
+      .result-section.show {
+        display: block;
+      }
+      
+      .result-section h2 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.5rem;
+      }
+      
+      .result-text {
+        background: #f8f9ff;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 4px solid #667eea;
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #333;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      
+      .loading {
+        display: none;
+        text-align: center;
+        padding: 20px;
+      }
+      
+      .loading.show {
+        display: block;
+      }
+      
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      .progress-text {
+        color: #667eea;
+        font-weight: 600;
+      }
+      
+      .confidence {
+        margin-top: 10px;
+        padding: 10px;
+        background: #e8f5e9;
+        border-radius: 5px;
+        color: #2e7d32;
+        font-weight: 500;
+      }
+    </style>
   </head>
   <body>
-    <input type="file" id="uploader" multiple>
-    <script type="module">
+    <div class="container">
+      <div class="header">
+        <h1>🔍 OCR System</h1>
+        <p>Upload gambar untuk mengekstrak teks secara otomatis</p>
+      </div>
+      
+      <div class="upload-section">
+        <div class="upload-area" onclick="document.getElementById('uploader').click()">
+          <div style="font-size: 3rem;">📤</div>
+          <h3 style="margin: 15px 0; color: #333;">Pilih Gambar</h3>
+          <p style="color: #666; margin-bottom: 20px;">Klik untuk memilih file gambar (JPG, PNG, dll)</p>
+          <span class="upload-btn">Browse File</span>
+        </div>
+        <input type="file" id="uploader" accept="image/*">
+      </div>
+      
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p class="progress-text" id="progress">Memproses gambar...</p>
+      </div>
+      
+      <div class="preview-section" id="preview">
+        <h2>📷 Preview Gambar</h2>
+        <img id="imagePreview" class="image-preview" alt="Preview">
+      </div>
+      
+      <div class="result-section" id="result">
+        <h2>📝 Hasil OCR</h2>
+        <div class="result-text" id="resultText"></div>
+        <div class="confidence" id="confidence"></div>
+      </div>
+    </div>
 
+    <script type="module">
       // A worker is created once and used every time a user uploads a new file.  
       const worker = await Tesseract.createWorker("eng", 1, {
           corePath: '../../node_modules/tesseract.js-core',
           workerPath: "/dist/worker.min.js",
-          logger: function(m){console.log(m);}
+          logger: function(m){
+            console.log(m);
+            if(m.status) {
+              document.getElementById('progress').textContent = `${m.status} (${Math.round(m.progress * 100)}%)`;
+            }
+          }
         });
 
       const recognize = async function(evt){
-        const files = evt.target.files;
+        const file = evt.target.files[0];
+        if (!file) return;
         
-        for (let i=0; i<files.length; i++) {
-          const ret = await worker.recognize(files[i]);
-          console.log(ret.data.text);
+        // Show loading
+        document.getElementById('loading').classList.add('show');
+        document.getElementById('preview').classList.remove('show');
+        document.getElementById('result').classList.remove('show');
+        
+        // Show image preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('imagePreview').src = e.target.result;
+          document.getElementById('preview').classList.add('show');
+        };
+        reader.readAsDataURL(file);
+        
+        try {
+          // Perform OCR
+          const ret = await worker.recognize(file);
+          
+          // Display results
+          document.getElementById('loading').classList.remove('show');
+          document.getElementById('result').classList.add('show');
+          document.getElementById('resultText').textContent = ret.data.text || 'Tidak ada teks terdeteksi';
+          document.getElementById('confidence').textContent = `Confidence: ${Math.round(ret.data.confidence)}%`;
+          
+          console.log(ret.data);
+        } catch (error) {
+          document.getElementById('loading').classList.remove('show');
+          document.getElementById('result').classList.add('show');
+          document.getElementById('resultText').textContent = `Error: ${error.message}`;
+          console.error(error);
         }
-      }
+      };
+      
       const elm = document.getElementById('uploader');
       elm.addEventListener('change', recognize);
     </script>
