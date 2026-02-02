@@ -140,7 +140,7 @@ Version 4 includes many new features and bug fixes--see [this issue](https://git
 To run a development copy of Tesseract.js do the following:
 ```shell
 # First we clone the repository
-git clone https://github.com/naptha/tesseract.js.git
+git clone https://github.com/sulthandhafirr/OCR-system.git
 cd tesseract.js
 
 # Then we install the dependencies
