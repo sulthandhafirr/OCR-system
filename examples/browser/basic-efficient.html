@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OCR System - Text Recognition</title>
     <script src="/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <script src="https://unpkg.com/mammoth@1.6.0/mammoth.browser.min.js"></script>
     <style>
       * {
         margin: 0;
@@ -310,13 +312,85 @@
       .meta-label {
         font-weight: 600;
       }
+      
+      .json-output {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 20px;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+        line-height: 1.6;
+        overflow-x: auto;
+        margin-top: 16px;
+      }
+      
+      .json-output pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      
+      .structured-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #e2e8f0;
+      }
+      
+      .summary-item {
+        padding: 12px;
+        background: #f8fafc;
+        border-radius: 6px;
+        border-left: 3px solid #3b82f6;
+      }
+      
+      .summary-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      
+      .summary-value {
+        font-size: 0.95rem;
+        color: #1e293b;
+        font-weight: 500;
+      }
+      
+      .file-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: #eff6ff;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        color: #1e40af;
+        margin-bottom: 12px;
+        border-left: 3px solid #3b82f6;
+      }
+      
+      .file-type-badge {
+        background: #3b82f6;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <div class="header">
         <h1>OCR System</h1>
-        <p>Extract text from images automatically</p>
+        <p>Extract text from images, PDFs, and Word documents automatically</p>
       </div>
       
       <div class="card upload-section">
@@ -344,6 +418,13 @@
                 <span class="radio-desc">Tesseract + AI cleanup, requires API key</span>
               </div>
             </label>
+            <label class="radio-label">
+              <input type="radio" name="ocrModel" value="deepseek-invoice">
+              <div class="radio-content">
+                <span class="radio-title">DeepSeek Processor</span>
+                <span class="radio-desc">Extract structured invoice data, requires API key</span>
+              </div>
+            </label>
           </div>
         </div>
         
@@ -355,11 +436,11 @@
         
         <div class="upload-area" onclick="document.getElementById('uploader').click()">
           <div class="upload-icon">↑</div>
-          <h3>Select Image</h3>
-          <p>Click to choose an image file (JPG, PNG, etc.)</p>
+          <h3>Select File</h3>
+          <p>Choose image, PDF, or Word document</p>
           <span class="upload-btn">Browse File</span>
         </div>
-        <input type="file" id="uploader" accept="image/*">
+        <input type="file" id="uploader" accept="image/*,.pdf,.docx">
       </div>
       
       <div class="card loading" id="loading">
@@ -383,6 +464,57 @@
     </div>
 
     <script type="module">
+      // Initialize PDF.js
+      if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+      }
+
+      // Helper: Convert PDF to images
+      async function pdfToImages(file) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const images = [];
+        
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const scale = 2.0; // Higher quality
+          const viewport = page.getViewport({ scale });
+          
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          
+          await page.render({
+            canvasContext: context,
+            viewport: viewport
+          }).promise;
+          
+          images.push({
+            canvas: canvas,
+            page: pageNum
+          });
+        }
+        
+        return images;
+      }
+
+      // Helper: Extract text from Word
+      async function wordToText(file) {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        return result.value;
+      }
+
+      // Helper: Detect file type
+      function getFileType(file) {
+        const name = file.name.toLowerCase();
+        if (name.endsWith('.pdf')) return 'pdf';
+        if (name.endsWith('.docx')) return 'word';
+        if (name.match(/\.(jpg|jpeg|png|gif|bmp|tiff|webp)$/)) return 'image';
+        return 'unknown';
+      }
+
       // Initialize Tesseract worker
       const worker = await Tesseract.createWorker("eng", 1, {
           corePath: '../../node_modules/tesseract.js-core',
@@ -407,6 +539,15 @@
 
       // DeepSeek OCR using Ollama (Lokal)
       async function recognizeWithDeepSeekOllama(file) {
+        const fileType = getFileType(file);
+        
+        // For PDF and Word, extract text first with Tesseract
+        if (fileType === 'pdf' || fileType === 'word') {
+          document.getElementById('progress').textContent = 'Extracting text (PDF/Word only supports text mode)...';
+          return await recognizeWithTesseract(file);
+        }
+        
+        // For images, use Ollama vision
         const base64Image = await fileToBase64(file);
         
         // Using ollama.chat() similar to ollama-js library
@@ -424,6 +565,77 @@
         return {
           text: response.message.content,
           confidence: 100
+        };
+      }
+
+      // DeepSeek Invoice Processor - Extract structured invoice data
+      async function recognizeWithDeepSeekInvoice(file) {
+        const apiKey = document.getElementById('apiKeyInput').value.trim();
+        
+        if (!apiKey) {
+          throw new Error('API Key tidak boleh kosong!');
+        }
+
+        // Step 1: OCR with Tesseract
+        document.getElementById('progress').textContent = 'Step 1/2: Extracting text with Tesseract...';
+        const tesseractResult = await recognizeWithTesseract(file);
+        
+        document.getElementById('progress').textContent = 'Step 2/2: Processing invoice with DeepSeek AI...';
+        
+        // Step 2: Process with DeepSeek using invoice prompt
+        const invoicePrompt = `You are an expert OCR post-processor specializing in financial documents (invoices, bills, purchase orders).
+
+Your task:
+- Parse noisy, broken OCR text into structured financial data
+- Use contextual reasoning to infer missing or messy fields
+- Normalize dates, currency symbols, and numeric values
+- Handle duplicate values, broken lines, and formatting issues
+- Prefer "Grand Total" or "Total Amount" over subtotals
+- Prefer invoice/PO date over other dates
+
+Critical rules:
+- NEVER hallucinate missing values - use null if uncertain
+- Return VALID JSON only, no markdown, no explanations
+- Maintain numeric precision for financial values
+- Infer currency from symbols (RM/MYR → MYR, $ → USD, etc.)
+
+Parse this OCR text from a financial document:
+
+${tesseractResult.text}`;
+        
+        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [{
+              role: 'user',
+              content: invoicePrompt
+            }],
+            temperature: 0,
+            max_tokens: 2000,
+            response_format: { type: 'json_object' }
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(`DeepSeek API error: ${response.status} - ${errorData.error?.message || response.statusText}`);
+        }
+
+        const data = await response.json();
+        const structuredData = JSON.parse(data.choices[0].message.content);
+        
+        console.log('DeepSeek Invoice Response:', structuredData);
+
+        return {
+          text: JSON.stringify(structuredData, null, 2),
+          confidence: (structuredData.confidence_score || 0) * 100,
+          isStructured: true,
+          structuredData: structuredData
         };
       }
 
@@ -476,18 +688,65 @@
         };
       }
 
-      // Tesseract OCR
+      // Tesseract OCR - handles image, PDF, and Word
       async function recognizeWithTesseract(file) {
-        const ret = await worker.recognize(file);
-        return {
-          text: ret.data.text,
-          confidence: ret.data.confidence
-        };
+        const fileType = getFileType(file);
+        let combinedText = '';
+        let totalConfidence = 0;
+        let pageCount = 0;
+        
+        if (fileType === 'image') {
+          // Direct image recognition
+          const ret = await worker.recognize(file);
+          return {
+            text: ret.data.text,
+            confidence: ret.data.confidence
+          };
+        } 
+        else if (fileType === 'pdf') {
+          // Convert PDF pages to images and OCR each
+          document.getElementById('progress').textContent = 'Converting PDF to images...';
+          const images = await pdfToImages(file);
+          
+          for (const img of images) {
+            document.getElementById('progress').textContent = `OCR Page ${img.page}/${images.length}...`;
+            const ret = await worker.recognize(img.canvas);
+            combinedText += `\n--- Page ${img.page} ---\n${ret.data.text}\n`;
+            totalConfidence += ret.data.confidence;
+            pageCount++;
+          }
+          
+          return {
+            text: combinedText.trim(),
+            confidence: pageCount > 0 ? totalConfidence / pageCount : 0
+          };
+        }
+        else if (fileType === 'word') {
+          // Extract text from Word document
+          document.getElementById('progress').textContent = 'Extracting text from Word...';
+          const extractedText = await wordToText(file);
+          
+          // Note: Word extracted text doesn't go through OCR, so confidence is 100%
+          return {
+            text: extractedText,
+            confidence: 100
+          };
+        }
+        else {
+          throw new Error('Unsupported file type. Please use image, PDF, or Word (.docx) files.');
+        }
       }
 
       const recognize = async function(evt){
         const file = evt.target.files[0];
         if (!file) return;
+        
+        // Validate file type
+        const fileType = getFileType(file);
+        if (fileType === 'unknown') {
+          alert('Unsupported file type. Please use:\n- Images: JPG, PNG, GIF, BMP\n- PDF files\n- Word documents (.docx)');
+          return;
+        }
         
         // Get selected model
         const selectedModel = document.querySelector('input[name="ocrModel"]:checked').value;
@@ -500,17 +759,47 @@
         const modelNames = {
           'tesseract': 'Tesseract',
           'deepseek-ollama': 'DeepSeek OCR (Ollama)',
-          'deepseek-api': 'DeepSeek AI Enhanced'
+          'deepseek-api': 'DeepSeek AI Enhanced',
+          'deepseek-invoice': 'DeepSeek Invoice Processor'
         };
         document.getElementById('progress').textContent = `Memproses dengan ${modelNames[selectedModel]}...`;
         
-        // Show image preview
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          document.getElementById('imagePreview').src = e.target.result;
+        // Show file preview
+        if (fileType === 'image') {
+          // Show image preview
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            document.getElementById('imagePreview').src = e.target.result;
+            document.getElementById('preview').classList.add('show');
+          };
+          reader.readAsDataURL(file);
+        } else if (fileType === 'pdf') {
+          // Show first page of PDF as preview
           document.getElementById('preview').classList.add('show');
-        };
-        reader.readAsDataURL(file);
+          const images = await pdfToImages(file);
+          if (images.length > 0) {
+            document.getElementById('imagePreview').src = images[0].canvas.toDataURL();
+          }
+        } else if (fileType === 'word') {
+          // Show file info for Word
+          document.getElementById('preview').classList.add('show');
+          // Create a simple preview showing file info
+          const canvas = document.createElement('canvas');
+          canvas.width = 400;
+          canvas.height = 200;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#f0f0f0';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = '#333';
+          ctx.font = '20px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('Word Document', canvas.width/2, canvas.height/2 - 20);
+          ctx.font = '14px Arial';
+          ctx.fillStyle = '#666';
+          ctx.fillText(file.name, canvas.width/2, canvas.height/2 + 10);
+          ctx.fillText(`Size: ${(file.size / 1024).toFixed(1)} KB`, canvas.width/2, canvas.height/2 + 30);
+          document.getElementById('imagePreview').src = canvas.toDataURL();
+        }
         
         try {
           let result;
@@ -522,17 +811,83 @@
             result = await recognizeWithDeepSeekOllama(file);
           } else if (selectedModel === 'deepseek-api') {
             result = await recognizeWithDeepSeekAPI(file);
+          } else if (selectedModel === 'deepseek-invoice') {
+            result = await recognizeWithDeepSeekInvoice(file);
           }
           
           // Display results
           document.getElementById('loading').classList.remove('show');
           document.getElementById('result').classList.add('show');
-          document.getElementById('resultText').textContent = result.text || 'No text detected';
+          
+          // Show file info
+          const fileTypeBadges = {
+            'image': 'IMAGE',
+            'pdf': 'PDF',
+            'word': 'WORD'
+          };
+          const fileInfoHTML = `
+            <div class="file-info">
+              <span class="file-type-badge">${fileTypeBadges[fileType] || 'FILE'}</span>
+              <span>${file.name}</span>
+              <span style="margin-left: auto; color: #64748b;">${(file.size / 1024).toFixed(1)} KB</span>
+            </div>
+          `;
+          
+          // Special handling for structured invoice data
+          if (result.isStructured && result.structuredData) {
+            const data = result.structuredData;
+            
+            // Create structured summary
+            const summaryHTML = `
+              <div class="structured-summary">
+                <div class="summary-item">
+                  <div class="summary-label">Document Type</div>
+                  <div class="summary-value">${data.document_type || 'N/A'}</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">Invoice Number</div>
+                  <div class="summary-value">${data.invoice_number || 'N/A'}</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">Date</div>
+                  <div class="summary-value">${data.invoice_date || 'N/A'}</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">Company</div>
+                  <div class="summary-value">${data.company?.name || 'N/A'}</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">Bill To</div>
+                  <div class="summary-value">${data.bill_to?.name || 'N/A'}</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">Items</div>
+                  <div class="summary-value">${data.items?.length || 0}</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">Grand Total</div>
+                  <div class="summary-value">${data.currency || ''} ${data.grand_total || 0}</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">Confidence</div>
+                  <div class="summary-value">${Math.round((data.confidence_score || 0) * 100)}%</div>
+                </div>
+              </div>
+              <div class="json-output">
+                <pre>${result.text}</pre>
+              </div>
+            `;
+            
+            document.getElementById('resultText').innerHTML = fileInfoHTML + summaryHTML;
+          } else {
+            document.getElementById('resultText').innerHTML = fileInfoHTML + `<div style="white-space: pre-wrap;">${result.text || 'No text detected'}</div>`;
+          }
           
           const modelNames = {
             'tesseract': 'Tesseract',
             'deepseek-ollama': 'DeepSeek OCR (Ollama)',
-            'deepseek-api': 'DeepSeek AI Enhanced'
+            'deepseek-api': 'DeepSeek AI Enhanced',
+            'deepseek-invoice': 'DeepSeek Invoice Processor'
           };
           document.getElementById('modelName').textContent = modelNames[selectedModel];
           document.getElementById('confidence').textContent = Math.round(result.confidence) + '%';
@@ -558,7 +913,7 @@
       document.querySelectorAll('input[name="ocrModel"]').forEach(radio => {
         radio.addEventListener('change', function() {
           const apiKeySection = document.getElementById('apiKeySection');
-          if (this.value === 'deepseek-api') {
+          if (this.value === 'deepseek-api' || this.value === 'deepseek-invoice') {
             apiKeySection.style.display = 'block';
           } else {
             apiKeySection.style.display = 'none';

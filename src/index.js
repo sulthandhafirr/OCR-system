@@ -17,6 +17,9 @@ const languages = require('./constants/languages');
 const OEM = require('./constants/OEM');
 const PSM = require('./constants/PSM');
 const { setLogging } = require('./utils/log');
+const pdfProcessor = require('./utils/pdfProcessor');
+const wordProcessor = require('./utils/wordProcessor');
+const deepseekProcessor = require('./utils/deepseekProcessor');
 
 module.exports = {
   languages,
@@ -25,5 +28,8 @@ module.exports = {
   createScheduler,
   createWorker,
   setLogging,
+  pdfProcessor,
+  wordProcessor,
+  deepseekProcessor,
   ...Tesseract,
 };
