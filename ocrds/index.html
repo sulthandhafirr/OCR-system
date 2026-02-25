@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek OCR Processor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <svg class="header-icon" viewBox="0 0 24 24" width="32" height="32">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M14 2v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 13H8M16 17H8M10 9H8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <div>
+                    <h1>DeepSeek OCR Processor</h1>
+                    <p>Transform documents into structured business data</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Upload Card -->
+        <section class="card upload-card">
+            <h2>Upload Document</h2>
+            <div class="upload-zone" id="uploadZone">
+                <svg class="upload-icon" viewBox="0 0 24 24" width="48" height="48">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <p class="upload-text">Click to upload or drag and drop</p>
+                <p class="upload-hint">Images (PNG, JPG), PDF, Word (DOC, DOCX)</p>
+            </div>
+            <input type="file" id="fileInput" accept=".png,.jpg,.jpeg,.pdf,.doc,.docx" hidden>
+        </section>
+
+        <!-- Preview Card -->
+        <section class="card preview-card hidden" id="previewCard">
+            <h2>File Preview</h2>
+            <div id="previewContent"></div>
+            <div class="preview-actions">
+                <button class="btn btn-secondary" id="clearBtn">Clear</button>
+                <button class="btn btn-primary" id="processBtn" disabled>Process Document</button>
+            </div>
+        </section>
+
+        <!-- Loading Indicator -->
+        <section class="card loading-card hidden" id="loadingCard">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Processing document...</p>
+        </section>
+
+        <!-- Status Message -->
+        <div id="statusMessage"></div>
+
+        <!-- Results Grid -->
+        <div class="results-grid hidden" id="resultsGrid">
+            <!-- Raw OCR Text -->
+            <section class="card result-card">
+                <div class="result-header">
+                    <h2>Raw OCR Text</h2>
+                    <div class="result-meta">
+                        <span class="badge" id="charCount">0 chars</span>
+                    </div>
+                </div>
+                <div class="result-content ocr-text" id="ocrText">
+                    No text extracted yet
+                </div>
+            </section>
+
+            <!-- Structured JSON -->
+            <section class="card result-card">
+                <div class="result-header">
+                    <h2>Structured Data</h2>
+                    <div class="result-meta">
+                        <span class="badge" id="docType">Type: Unknown</span>
+                        <span class="badge" id="confidence">Confidence: 0%</span>
+                    </div>
+                </div>
+                <pre class="result-content json-output" id="jsonOutput">{ }</pre>
+            </section>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

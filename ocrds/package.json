@@ -1,0 +1,34 @@
+{
+  "name": "ocrds",
+  "version": "1.0.0",
+  "description": "OCR Data Structuring - Post-OCR processor with DeepSeek LLM integration",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": [
+    "ocr",
+    "deepseek",
+    "invoice",
+    "bill",
+    "document-processing",
+    "llm",
+    "structured-data"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "tesseract.js": "^5.0.5",
+    "pdf-parse": "^1.1.1",
+    "mammoth": "^1.7.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
