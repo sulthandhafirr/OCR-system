@@ -9,6 +9,8 @@
   "jsdelivr": "dist/tesseract.min.js",
   "scripts": {
     "start": "node scripts/server.js",
+    "start:ims": "node ocrds/index.js",
+    "start:ams": "node ocrds-ams/index.js",
     "build": "rimraf dist && webpack --config scripts/webpack.config.prod.js && rollup -c scripts/rollup.esm.mjs",
     "profile:tesseract": "webpack-bundle-analyzer dist/tesseract-stats.json",
     "profile:worker": "webpack-bundle-analyzer dist/worker-stats.json",
