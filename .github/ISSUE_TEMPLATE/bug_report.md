@@ -1,31 +1,24 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Report a problem with OCRDS or OCRDS-AMS
 title: ''
 labels: ''
 assignees: ''
-
 ---
-**Tesseract.js version (version number for npm/GitHub release, or specific commit for repo)**
+
+**Which app?** `ocrds` / `ocrds-ams` / both
+
+**Node.js version**
 
 **Describe the bug**
-A clear and concise description of what the bug is.
+A clear description of what went wrong.
 
 **To Reproduce**
 Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+1.
+2.
+3.
 
-Please attach any input image required to replicate this behavior.
+**Expected vs actual behavior**
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
-
-**Device Version:**
- - OS + Version: [e.g. iOS8.1, Windows 10]
- - Browser [e.g. chrome, safari] or Node version [e.g. Node v18]
-
-**Additional context**
-Add any other context about the problem here.
+**Logs or screenshots** (remove secrets before posting)
