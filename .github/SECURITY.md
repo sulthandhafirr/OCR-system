@@ -1,5 +1,5 @@
-## Security contact information
+## Reporting a vulnerability
 
-To report a security vulnerability, please use the
-[Tidelift security contact](https://tidelift.com/security).
-Tidelift will coordinate the fix and disclosure.
+Please open a **private** security advisory on GitHub for this repository, or contact the repository maintainers directly. Do not post exploit details in public issues.
+
+Include affected component (`ocrds` / `ocrds-ams`), reproduction steps, and impact. Redact API keys and sensitive file names.

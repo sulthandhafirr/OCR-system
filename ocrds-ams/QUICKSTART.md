@@ -11,10 +11,12 @@ npm run start:ams
 ```bash
 cd ocrds-ams
 npm install
-# Copy .env from ocrds/ or create with DEEPSEEK_API_KEY=
+# cp .env.example .env   (macOS/Linux)
+copy .env.example .env
+# Edit .env: DEEPSEEK_API_KEY=... and PORT=3001
 npm start
 ```
 
 Open: `http://localhost:3001`
 
-Endpoints: same as ocrds (GET /, /health, POST /process, /process-text, /extract).
+Endpoints match `ocrds`: `GET /`, `GET /health`, `POST /process`, `POST /extract`.

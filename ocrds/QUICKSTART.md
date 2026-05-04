@@ -13,13 +13,17 @@ npm install
 ```
 
 ### 2. Configure environment
+Copy the example env file to `.env`, then edit it and set your API key.
+
 ```bash
-# Copy example env file
+# macOS / Linux
 cp .env.example .env
 
-# Edit .env and add your API key
-# DEEPSEEK_API_KEY=your_actual_api_key
+# Windows (PowerShell)
+copy .env.example .env
 ```
+
+Set `DEEPSEEK_API_KEY` inside `.env`.
 
 ### 3. Run the server
 ```bash

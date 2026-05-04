@@ -20,7 +20,7 @@ npm start
 Access: `http://localhost:3001`
 
 ## Environment
-Create `.env` in this folder (or copy from `ocrds/.env`):
+Create `.env` in this folder (copy `ocrds-ams/.env.example` to `.env`, or reuse keys from `ocrds/.env`):
 ```
 DEEPSEEK_API_KEY=your_api_key_here
 PORT=3001
