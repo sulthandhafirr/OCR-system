@@ -7,6 +7,27 @@ const fs = require('fs').promises;
 const path = require('path');
 
 /**
+ * Preprocess image for better OCR accuracy
+ * - grayscale: remove color distraction
+ * - denoise: light blur to reduce pixel noise
+ * - threshold: make text/background separation clearer
+ * @param {Buffer|string} imageSource - Image buffer or file path
+ * @returns {Promise<Buffer>} - Preprocessed image buffer
+ */
+async function preprocessImageForOCR(imageSource) {
+  const sharp = require('sharp');
+  const input = Buffer.isBuffer(imageSource) ? imageSource : await fs.readFile(imageSource);
+
+  return sharp(input)
+    .grayscale()
+    .normalize()
+    .blur(0.4)
+    .threshold(170, { grayscale: true })
+    .toFormat('png')
+    .toBuffer();
+}
+
+/**
  * Extract text from image using Tesseract.js
  * @param {Buffer|string} imageSource - Image buffer or file path
  * @returns {Promise<string>} - Extracted text
@@ -15,9 +36,10 @@ async function extractFromImage(imageSource) {
   try {
     // Dynamic import of Tesseract.js (if available)
     const Tesseract = require('tesseract.js');
+    const preprocessedImage = await preprocessImageForOCR(imageSource);
     
     const result = await Tesseract.recognize(
-      imageSource,
+      preprocessedImage,
       'eng',
       {
         logger: (m) => {
@@ -207,5 +229,6 @@ module.exports = {
   extractFromImage,
   extractFromPDF,
   extractFromWord,
+  preprocessImageForOCR,
   detectFileType
 };
