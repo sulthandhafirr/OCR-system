@@ -1,7 +1,7 @@
 {
-  "name": "ocrds",
+  "name": "ocrds-ams",
   "version": "1.0.0",
-  "description": "OCR Data Structuring - Post-OCR processor with DeepSeek LLM integration",
+  "description": "OCR Data Structuring - OCRDS_AMS",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -11,8 +11,8 @@
   "keywords": [
     "ocr",
     "deepseek",
+    "ams",
     "invoice",
-    "bill",
     "document-processing",
     "llm",
     "structured-data"
@@ -21,10 +21,9 @@
   "license": "MIT",
   "dependencies": {
     "dotenv": "^16.4.5",
-    "mammoth": "^1.7.2",
+    "tesseract.js": "^5.0.5",
     "pdf-parse": "^1.1.1",
-    "sharp": "^0.34.5",
-    "tesseract.js": "^5.0.5"
+    "mammoth": "^1.7.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.3"

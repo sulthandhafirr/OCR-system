@@ -13,6 +13,26 @@ Sistem OCR berbasis Tesseract.js yang dapat membaca teks dari gambar, PDF, dan d
 
 ---
 
+## Dua Sistem OCRDS (Satu Repo)
+
+Repo ini berisi **dua sistem** OCR Data Structuring (OCR + DeepSeek):
+
+| Sistem        | Folder       | Port | Kegunaan    |
+|---------------|--------------|------|-------------|
+| **Inventory** | `ocrds/`     | 3000 | Sistem asli |
+| **OCRDS_AMS** | `ocrds-ams/` | 3001 | Duplikat untuk modifikasi |
+
+Jalankan dari **root**:
+
+```bash
+npm run start:inventory   # http://localhost:3000
+npm run start:ams        # http://localhost:3001
+```
+
+Masing-masing punya `package.json` dan dependency sendiri. Untuk OCRDS_AMS, install dulu: `cd ocrds-ams && npm install`. Setelah itu bisa diubah-ubah (schema, prompt, UI) di folder `ocrds-ams/` tanpa mengganggu inventory.
+
+---
+
 ## Quick Start
 
 ### Instalasi
@@ -268,6 +288,13 @@ Download manual dari GitHub:
 
 ```
 OCR-system/
+├── ocrds/                  # Sistem Inventory (port 3000)
+│   ├── index.js            # Server entry
+│   ├── ocr.js, deepseekProcessor.js, schema.js
+│   ├── index.html, script.js, style.css
+│   └── package.json
+├── ocrds-ams/               # OCRDS_AMS (port 3001) — duplikat untuk modifikasi
+│   └── (struktur sama seperti ocrds/)
 ├── src/
 │   ├── utils/
 │   │   ├── pdfProcessor.js      # Utility PDF
